@@ -8,19 +8,20 @@ export default {
     theme: {
         extend: {
             colors: {
-                dark: '#06080f',
-                'dark-2': '#0d1117',
-                'dark-3': '#111827',
-                primary: '#818cf8',       // indigo/violet
-                secondary: '#a78bfa',     // purple
-                accent: '#38bdf8',        // sky blue
-                neon: '#c084fc',          // neon purple
+                dark: '#020617',
+                'dark-2': '#0f172a',
+                'dark-3': '#1e293b',
+                primary: '#06b6d4',       // cyan/teal
+                secondary: '#38bdf8',     // sky blue
+                accent: '#22c55e',        // neon green
+                neon: '#0ea5e9',          // electric blue
                 glass: 'rgba(255, 255, 255, 0.04)',
                 'glass-hover': 'rgba(255, 255, 255, 0.08)',
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
                 heading: ['Poppins', 'sans-serif'],
+                orbitron: ['Orbitron', 'sans-serif'],
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

@@ -1,217 +1,327 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Download, Github, Linkedin, Mail, MessageCircle, Upload } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useScroll, useTransform, useMotionValue, animate } from 'framer-motion';
+import { ArrowRight, Download, Award, Briefcase, Star, Sparkles } from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
-import defaultProfileImg from '../assets/images/profile.png';
+import { useTheme } from '../context/ThemeContext';
+import defaultProfileImg from '../assets/images/profile.jpg';
+import MagneticButton from './MagneticButton';
+import CyberCard from './CyberCard';
 
-const Hero = () => {
-    const { hero, personal } = portfolioData;
-    const [textIndex, setTextIndex] = useState(0);
-    const [isMobile, setIsMobile] = useState(true);
-    const [profileImg, setProfileImg] = useState(defaultProfileImg);
+/* ── Typewriter hook ── */
+const useTypewriter = (texts, speed = 80, pause = 1800) => {
+    const [display, setDisplay] = useState('');
+    const [txtIdx, setTxtIdx] = useState(0);
+    const [charIdx, setCharIdx] = useState(0);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        const current = texts[txtIdx];
+        let timeout;
+        if (!deleting && charIdx < current.length) {
+            timeout = setTimeout(() => setCharIdx(c => c + 1), speed);
+        } else if (!deleting && charIdx === current.length) {
+            timeout = setTimeout(() => setDeleting(true), pause);
+        } else if (deleting && charIdx > 0) {
+            timeout = setTimeout(() => setCharIdx(c => c - 1), speed / 2);
+        } else {
+            setDeleting(false);
+            setTxtIdx(i => (i + 1) % texts.length);
+        }
+        setDisplay(current.slice(0, charIdx));
+        return () => clearTimeout(timeout);
+    }, [charIdx, deleting, txtIdx, texts, speed, pause]);
+
+    return display;
+};
+
+/* ── Animated Math Counter ── */
+const AnimatedCounter = ({ value, duration = 2.5 }) => {
+    const num = parseFloat(value);
+    const hasPlus = String(value).includes('+');
+    const strVal = String(value).replace('+', '');
+    const decimals = strVal.split('.')[1]?.length || 0;
+    const count = useMotionValue(0);
+    const [display, setDisplay] = useState(0);
+
+    useEffect(() => {
+        const controls = animate(count, num, {
+            duration,
+            ease: "easeOut",
+            onUpdate: (latest) => {
+                setDisplay(decimals > 0 ? latest.toFixed(decimals) : Math.floor(latest));
+            }
+        });
+        return controls.stop;
+    }, [num, duration, count, decimals]);
+
+    return <span>{display}{hasPlus ? '+' : ''}</span>;
+};
+
+/* ── Floating particles ── */
+const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    top: `${Math.random() * 100}%`,
+    left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3,
+    delay: Math.random() * 2,
+    size: Math.random() > 0.6 ? 2 : 1,
+    color: ['bg-[#06b6d4]', 'bg-[#0ea5e9]', 'bg-[#22c55e]'][Math.floor(Math.random() * 3)]
+}));
+
+const Hero = () => {
+    const { personal } = portfolioData;
+    const [isMobile, setIsMobile] = useState(true);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const sectionRef = useRef(null);
+    const { theme } = useTheme();
+
+    const typedText = useTypewriter([
+        'Data Scientist',
+        'BI Analyst',
+        'Software Developer',
+        'AI Enthusiast'
+    ]);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 1024);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
+
+    // Pointer glow effect
+    useEffect(() => {
+        const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+        window.addEventListener('mousemove', onMove);
+        return () => window.removeEventListener('mousemove', onMove);
     }, []);
 
     const { scrollY } = useScroll();
-    const y1Base = useTransform(scrollY, [0, 500], [0, 200]);
-    const y2Base = useTransform(scrollY, [0, 500], [0, -150]);
+    const y1Base = useTransform(scrollY, [0, 500], [0, 150]);
     const y1 = isMobile ? 0 : y1Base;
-    const y2 = isMobile ? 0 : y2Base;
-
-    const longestText = hero.rotatingText.reduce((a, b) => (a.length > b.length ? a : b), '');
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setTextIndex((prev) => (prev + 1) % hero.rotatingText.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [hero.rotatingText.length]);
-
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => setProfileImg(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
 
     return (
-        <section id="home" className="relative min-h-[110vh] flex items-center pt-32 pb-20 overflow-hidden">
+        <section id="home" ref={sectionRef} className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden bg-slate-50 dark:bg-[#020617] transition-colors duration-500">
+            
+            {/* ── Background Effects ── */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                {/* Dark Navy Base Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-100 to-white dark:from-[#020617] dark:via-[#0f172a] dark:to-[#020617] opacity-90 transition-colors duration-500" />
+                
+                {/* Glowing Orbs */}
+                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#06b6d4]/20 rounded-full blur-[160px] animate-pulse-slow mix-blend-screen" />
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#0ea5e9]/15 rounded-full blur-[150px] mix-blend-screen" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#0f172a]/50 rounded-full blur-[120px]" />
+                
+                {/* Glassmorphism Grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_10%,transparent_100%)]" />
 
-            {/* Animated background blobs */}
-            <div className="absolute inset-0 -z-10 pointer-events-none">
-                <div className="blob-1 absolute top-[8%] left-[5%] w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
-                <div className="blob-2 absolute bottom-[10%] right-[5%] w-96 h-96 bg-secondary/10 rounded-full blur-[120px]" />
-                <div className="blob-3 absolute top-[50%] left-[55%] w-72 h-72 bg-accent/8 rounded-full blur-[100px]" />
+                {/* Particles */}
+                {PARTICLES.map(p => (
+                    <motion.div
+                        key={p.id}
+                        className={`absolute rounded-full ${p.color} shadow-lg`}
+                        style={{ top: p.top, left: p.left, width: p.size * 2, height: p.size * 2, filter: 'blur(1px)' }}
+                        animate={{ opacity: [0, 0.8, 0], y: [0, -40, 0], scale: [0.8, 1.5, 0.8] }}
+                        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+                    />
+                ))}
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Pointer interactive glow */}
+            <motion.div
+                className="fixed z-0 w-96 h-96 pointer-events-none rounded-full mix-blend-screen"
+                style={{
+                    background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 60%)',
+                    top: mousePos.y - 192,
+                    left: mousePos.x - 192,
+                    transition: 'top 0.1s ease-out, left 0.1s ease-out',
+                }}
+            />
 
-                {/* ── Left ── */}
+            <div className="relative z-10 max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 w-full">
+                
+                {/* ── TOP: Huge Name ── */}
                 <motion.div
-                    style={{ y: y1 }}
-                    initial={{ opacity: 0, x: -60 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                    className="z-10 relative min-w-0 overflow-hidden"
+                    className="w-full text-center lg:text-left mb-6 lg:mb-12"
+                    initial={{ opacity: 0, y: -40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
                 >
-                    {/* "Open to work" badge */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20 mb-8"
-                    >
-                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                        <span className="text-gray-300 font-semibold tracking-widest text-xs">OPEN TO WORK</span>
-                    </motion.div>
-
-                    {/* Heading */}
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-heading mb-8 leading-[1.15] tracking-tight">
-                        I am a{' '}
-                        {/* Rotating text: fixed height container so text never overflows */}
-                        <span className="block mt-1 relative" style={{ minHeight: '1.25em' }}>
-                            <AnimatePresence mode="wait">
-                                <motion.span
-                                    key={textIndex}
-                                    initial={{ y: 40, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: -40, opacity: 0 }}
-                                    transition={{ duration: 0.5, ease: 'easeOut' }}
-                                    className="absolute left-0 top-0 text-gradient leading-tight"
-                                    style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-                                >
-                                    {hero.rotatingText[textIndex]}
-                                </motion.span>
-                            </AnimatePresence>
-                            {/* invisible spacer — wraps normally to reserve height */}
-                            <span
-                                className="block opacity-0 select-none pointer-events-none text-gradient leading-tight"
-                                style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}
-                                aria-hidden="true"
-                            >
-                                {longestText}
-                            </span>
+                    <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[7.5rem] font-black font-orbitron tracking-tight leading-none whitespace-nowrap overflow-visible">
+                        <span className="bg-gradient-to-r from-[#22c55e] via-[#86efac] to-[#15803d] bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(34,197,94,0.5)]">
+                            Nikesh Kumar
                         </span>
                     </h1>
-
-                    <p className="text-gray-400 text-lg md:text-xl max-w-lg mb-10 leading-relaxed">{hero.subtitle}</p>
-
-                    {/* CTA buttons */}
-                    <div className="flex flex-wrap gap-4 mb-14">
-                        <a href="#projects" className="btn-glow text-white flex items-center gap-2 group">
-                            View Projects
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </a>
-                        <a href={personal.resume} target="_blank" rel="noreferrer" className="btn-outline-glow flex items-center gap-2">
-                            <Download size={18} />
-                            Download CV
-                        </a>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-6 border-t border-white/10 pt-8 max-w-md">
-                        <div>
-                            <div className="text-3xl font-bold text-gradient font-heading mb-1">{personal.stats.cgpa}</div>
-                            <div className="text-gray-500 text-xs uppercase tracking-widest font-semibold">CGPA</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-gradient font-heading mb-1">{personal.stats.projects}</div>
-                            <div className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Projects</div>
-                        </div>
-                        <div>
-                            <div className="text-3xl font-bold text-gradient font-heading mb-1">Active</div>
-                            <div className="text-gray-500 text-xs uppercase tracking-widest font-semibold">Status</div>
-                        </div>
-                    </div>
                 </motion.div>
 
-                {/* ── Right: Profile Card ── */}
-                <motion.div
-                    style={{ y: y2 }}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.9 }}
-                    className="relative flex justify-center mx-auto mt-8 lg:mt-0 flex-shrink-0"
-                >
-                    <div className="relative w-full max-w-[380px]">
-                        {/* floating card */}
-                        <div className="animate-float">
-                            {/* glow ring behind card */}
-                            <div className="absolute inset-0 rounded-[2rem] blur-2xl opacity-20"
-                                style={{ background: 'linear-gradient(135deg, #818cf8, #a78bfa, #38bdf8)' }} />
+                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-16 lg:gap-8 items-center">
+                    
+                    {/* ── CENTER LEFT: Text & Buttons & Stats ── */}
+                    <motion.div
+                        style={{ y: y1 }}
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="flex flex-col items-center lg:items-start text-center lg:text-left"
+                    >
+                        {/* Heading */}
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-slate-800 dark:text-white mb-2 pb-1 flex flex-wrap justify-center lg:justify-start gap-3 items-center transition-colors">
+                            <span className="text-slate-600 dark:text-gray-300 font-light transition-colors">I am a</span>
+                            <span className="bg-gradient-to-r from-[#0ea5e9] via-[#0ea5e9] to-[#06b6d4] bg-[length:200%_auto] animate-gradient-shift bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(14,165,233,0.6)] font-black">
+                                {typedText}
+                            </span>
+                            <span className="inline-block w-1 h-10 bg-[#22c55e] animate-pulse shadow-[0_0_15px_rgba(34,197,94,1)] ml-1 rounded-full" />
+                        </h2>
 
-                            <div className="relative neon-border rounded-[2rem] px-6 py-8 flex flex-col items-center overflow-hidden transition-all duration-500"
-                                style={{ background: 'linear-gradient(160deg, rgba(13,17,23,0.9), rgba(17,24,39,0.85))' }}>
-
-                                {/* top shimmer */}
-                                <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-
-                                {/* Avatar */}
-                                <div className="relative w-56 h-56 mb-6 cursor-pointer group">
-                                    {/* spinning gradient ring */}
-                                    <div className="ring-spin absolute inset-0 rounded-full p-[3px]"
-                                        style={{ background: 'linear-gradient(135deg, #818cf8, #a78bfa, #38bdf8, #818cf8)' }}>
-                                        <div className="w-full h-full rounded-full bg-dark-2" />
-                                    </div>
-                                    <div className="absolute inset-[3px] rounded-full overflow-hidden bg-dark-2 flex items-center justify-center">
-                                        {profileImg ? (
-                                            <img src={profileImg} alt={personal.name} className="w-full h-full object-cover object-top" />
-                                        ) : (
-                                            <div className="flex flex-col items-center text-gray-500">
-                                                <Upload size={28} className="mb-1" />
-                                                <span className="text-xs font-semibold uppercase tracking-wider">Upload Photo</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        title="Upload your photo"
+                        {/* Futuristic Tags / Badges */}
+                        <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 max-w-3xl mx-auto z-10 relative pointer-events-auto">
+                            {[
+                                { text: 'Data Science', color: 'from-cyan-400 to-blue-500', shadow: 'rgba(6,182,212,0.4)', textGlow: 'text-cyan-400' },
+                                { text: 'AI', color: 'from-teal-400 to-emerald-500', shadow: 'rgba(45,212,191,0.4)', textGlow: 'text-teal-400' },
+                                { text: 'Developer', color: 'from-blue-400 to-indigo-500', shadow: 'rgba(59,130,246,0.4)', textGlow: 'text-blue-400' }
+                            ].map((badge, index) => (
+                                <motion.div
+                                    key={badge.text}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
+                                    whileHover={{ y: -4, scale: 1.05 }}
+                                    className="relative group cursor-pointer"
+                                >
+                                    {/* Outer Blur Glow on Hover */}
+                                    <div 
+                                        className="absolute inset-0 rounded-full blur-md opacity-0 group-hover:opacity-70 transition-opacity duration-300"
+                                        style={{ background: `linear-gradient(to right, ${badge.shadow}, transparent)`, filter: `drop-shadow(0 0 15px ${badge.shadow})` }}
                                     />
-                                </div>
+                                    
+                                    {/* Glass Tag Container */}
+                                    <div className="relative px-6 py-2.5 rounded-full bg-white/5 dark:bg-[#020617]/40 backdrop-blur-xl border border-black/10 dark:border-white/10 overflow-hidden shadow-lg transition-all duration-300 group-hover:border-white/30 dark:group-hover:border-white/20">
+                                        
+                                        {/* Sweeping Highlight on Hover */}
+                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 skew-x-[-20deg]" />
 
-                                <h3 className="text-2xl font-bold text-white mb-1 font-heading">{personal.name}</h3>
-                                <p className="text-primary text-sm font-medium tracking-wide mb-5">Aspiring Data Scientist</p>
-
-                                {/* tag pills */}
-                                <div className="flex flex-wrap justify-center gap-2 mb-6">
-                                    {['Python', 'Power BI', 'Data Science'].map((tag) => (
-                                        <span key={tag} className="px-3 py-1.5 rounded-lg text-xs text-primary/80 border border-primary/20 bg-primary/5">
-                                            {tag}
+                                        {/* Gradient Badge Text */}
+                                        <span className={`relative z-10 bg-gradient-to-r ${badge.color} bg-clip-text text-transparent font-black tracking-widest uppercase text-sm md:text-base drop-shadow-[0_0_8px_rgba(255,255,255,0.2)] dark:drop-shadow-[0_0_8px_${badge.shadow}]`}>
+                                            {badge.text}
                                         </span>
-                                    ))}
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-5 mb-14">
+                            <MagneticButton
+                                href="#projects"
+                                className="relative inline-block group px-8 py-4 rounded-full font-bold text-white overflow-hidden shadow-[0_10px_30px_rgba(6,182,212,0.4)]"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#06b6d4] to-[#0ea5e9] transition-transform duration-500 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#0ea5e9] to-[#22c55e] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
+                                    View Projects <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                                </span>
+                            </MagneticButton>
+
+                            <MagneticButton
+                                href={personal.resume}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="relative inline-block group px-8 py-4 rounded-full font-bold overflow-hidden glass border border-[#22c55e]/50 shadow-[0_10px_30px_rgba(34,197,94,0.15)] hover:border-[#22c55e]/80 transition-colors"
+                            >
+                                <div className="absolute inset-0 bg-black/5 dark:bg-white/5 group-hover:bg-[#22c55e]/20 transition-colors duration-300" />
+                                <span className="relative z-10 flex items-center gap-2 text-slate-800 dark:text-gray-100 group-hover:text-[#22c55e] dark:group-hover:text-[#22c55e] transition-colors drop-shadow-sm">
+                                    <Download size={18} /> Download CV
+                                </span>
+                            </MagneticButton>
+                        </div>
+
+                        {/* Stats Glass Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 w-full max-w-2xl">
+                            {[
+                                { value: personal.stats.cgpa, label: 'CGPA', icon: Star, color: 'text-[#22c55e]', bg: 'bg-[#22c55e]', glow: 'rgba(34,197,94,0.3)' },
+                                { value: personal.stats.projects, label: 'Projects', icon: Briefcase, color: 'text-[#0ea5e9]', bg: 'bg-[#0ea5e9]', glow: 'rgba(14,165,233,0.3)' },
+                                { value: '4+', label: 'Certificates', icon: Award, color: 'text-[#a855f7]', bg: 'bg-[#a855f7]', glow: 'rgba(168,85,247,0.3)' },
+                            ].map((stat, i) => (
+                                <CyberCard key={i} className="h-full min-h-[160px]" glowColor={stat.glow.replace('0.3', '0.6')} colorFrom={stat.bg.replace('bg-[', '').replace(']', '')} disableFloat={true}>
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.8 + i * 0.1 }}
+                                        className="relative flex flex-col items-center justify-center p-5 rounded-2xl bg-white/60 dark:bg-[#0f172a]/60 border border-black/5 dark:border-white/10 backdrop-blur-xl overflow-hidden group hover:border-[#06b6d4]/50 transition-all duration-500 h-full pointer-events-none"
+                                        style={{ boxShadow: `0 8px 32px ${stat.glow}` }}
+                                    >
+                                        <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} mix-blend-screen rounded-full blur-[40px] opacity-20 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none`} />
+                                        <stat.icon className={`w-8 h-8 mb-4 ${stat.color} drop-shadow-[0_0_8px_currentColor] z-10 transform group-hover:scale-110 transition-transform duration-500`} />
+                                        <div className={`text-4xl font-black font-orbitron ${stat.color} drop-shadow-[0_0_15px_currentColor] mb-2 z-10 tracking-wider transition-transform duration-500`}>
+                                            <AnimatedCounter value={stat.value} />
+                                        </div>
+                                        <div className="text-[0.65rem] uppercase tracking-[0.2em] text-slate-500 dark:text-gray-400 font-bold z-10 drop-shadow-md">
+                                            {stat.label}
+                                        </div>
+                                    </motion.div>
+                                </CyberCard>
+                            ))}
+                        </div>
+                    </motion.div>
+
+                    {/* ── CENTER RIGHT: Premium Photo ── */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
+                        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                        transition={{ duration: 1.2, delay: 0.4, type: 'spring', bounce: 0.4 }}
+                        className="relative flex justify-center lg:justify-end items-center w-full"
+                    >
+                        <div className="relative w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] xl:w-[480px] xl:h-[480px]">
+                            {/* Blur glow behind */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#06b6d4] to-[#0ea5e9] rounded-full blur-[80px] opacity-50 animate-pulse-slow mix-blend-screen" />
+                            
+                            {/* Floating container */}
+                            <motion.div
+                                animate={{ y: [-15, 15, -15] }}
+                                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                                className="relative w-full h-full flex items-center justify-center p-4"
+                            >
+                                {/* Outer glowing ring (spins) */}
+                                <div className="absolute -inset-2 xl:-inset-4 rounded-full border border-[#0ea5e9]/30 border-dashed animate-[spin_15s_linear_infinite]" 
+                                     style={{ boxShadow: '0 0 30px rgba(14,165,233,0.3)' }} />
+                                     
+                                {/* Middle glowing ring (spins reverse) */}
+                                <div className="absolute inset-0 rounded-full border-2 border-[transparent] border-t-[#22c55e]/80 border-b-[#06b6d4]/80 animate-[spin_10s_linear_infinite_reverse]"
+                                     style={{ filter: 'drop-shadow(0 0 15px rgba(34,197,94,0.6))' }} />
+
+                                {/* Inner picture wrapper */}
+                                <div className="relative w-full h-full rounded-full overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.7)] border-4 border-white dark:border-[#020617] bg-white dark:bg-[#0f172a] transition-colors">
+                                    <img 
+                                        src={defaultProfileImg} 
+                                        alt="Nikesh Kumar" 
+                                        className="w-full h-full object-cover object-[center_30%] hover:scale-110 hover:rotate-3 transition-transform duration-700"
+                                    />
+                                    {/* Glass reflection overlay */}
+                                    <div className="absolute inset-0 rounded-full shadow-[inset_0_0_60px_rgba(0,0,0,0.8)] pointer-events-none" />
+                                    <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/10 to-transparent rounded-t-full pointer-events-none" />
                                 </div>
 
-                                {/* Social bar */}
-                                <div className="flex justify-around w-full border-t border-white/10 pt-4">
-                                    {[
-                                        { href: personal.github, icon: Github, label: 'GitHub' },
-                                        { href: personal.linkedin, icon: Linkedin, label: 'LinkedIn' },
-                                        { href: `mailto:${personal.email}`, icon: Mail, label: 'Email' },
-                                        { href: '#contact', icon: MessageCircle, label: 'Contact' },
-                                    ].map(({ href, icon: Icon, label }) => (
-                                        <a key={label} href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noreferrer"
-                                            className="flex flex-col items-center gap-1.5 text-gray-400 hover:text-primary transition-colors group/icon">
-                                            <div className="p-2.5 rounded-full bg-white/5 group-hover/icon:bg-primary/10 group-hover/icon:shadow-[0_0_12px_rgba(129,140,248,0.4)] transition-all">
-                                                <Icon size={17} />
-                                            </div>
-                                            <span className="text-[8px] uppercase tracking-wider font-semibold opacity-70">{label}</span>
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
+                                {/* Floating UI Elements / Sparkles */}
+                                <motion.div
+                                     className="absolute top-[10%] -right-[5%] text-[#22c55e]"
+                                     animate={{ scale: [1, 1.3, 1], opacity: [0.6, 1, 0.6], rotate: [0, 90, 0] }}
+                                     transition={{ duration: 4, repeat: Infinity }}
+                                >
+                                     <Sparkles size={40} className="drop-shadow-[0_0_15px_rgba(34,197,94,1)]" />
+                                </motion.div>
+                                <motion.div
+                                     className="absolute bottom-[10%] -left-[5%] text-[#0ea5e9]"
+                                     animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5], rotate: [0, -90, 0] }}
+                                     transition={{ duration: 3.5, repeat: Infinity, delay: 1 }}
+                                >
+                                     <Sparkles size={28} className="drop-shadow-[0_0_15px_rgba(14,165,233,1)]" />
+                                </motion.div>
+                            </motion.div>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
+
+                </div>
             </div>
         </section>
     );

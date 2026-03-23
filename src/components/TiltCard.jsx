@@ -1,28 +1,26 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
-const TiltCard = ({ children, className = "", ...props }) => {
+const TiltCard = ({ children, className, style }) => {
+    const ref = useRef(null);
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
-    const mouseXSpring = useSpring(x);
-    const mouseYSpring = useSpring(y);
+    const mouseXSpring = useSpring(x, { stiffness: 400, damping: 30 });
+    const mouseYSpring = useSpring(y, { stiffness: 400, damping: 30 });
 
-    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["12deg", "-12deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-12deg", "12deg"]);
 
     const handleMouseMove = (e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
         const width = rect.width;
         const height = rect.height;
-
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-
         const xPct = mouseX / width - 0.5;
         const yPct = mouseY / height - 0.5;
-
         x.set(xPct);
         y.set(yPct);
     };
@@ -34,17 +32,13 @@ const TiltCard = ({ children, className = "", ...props }) => {
 
     return (
         <motion.div
+            ref={ref}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            style={{
-                rotateY,
-                rotateX,
-                transformStyle: "preserve-3d",
-            }}
-            className={`relative transition-all duration-200 ease-out ${className}`}
-            {...props}
+            style={{ rotateX, rotateY, transformStyle: "preserve-3d", ...style }}
+            className={className}
         >
-            <div style={{ transform: "translateZ(50px)" }} className="h-full">
+            <div style={{ transform: "translateZ(30px)" }} className="w-full h-full">
                 {children}
             </div>
         </motion.div>

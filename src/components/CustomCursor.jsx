@@ -1,90 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useSpring, useMotionValue } from 'framer-motion';
+import { motion, useSpring } from 'framer-motion';
 
 const CustomCursor = () => {
-    const [isHovered, setIsHovered] = useState(false);
-    const cursorX = useMotionValue(-100);
-    const cursorY = useMotionValue(-100);
-
-    // Smooth spring animation for the cursor follower
-    const springConfig = { damping: 25, stiffness: 700 };
-    const cursorXSpring = useSpring(cursorX, springConfig);
-    const cursorYSpring = useSpring(cursorY, springConfig);
+    const [mousePos, setMousePos] = useState({ x: -100, y: -100 });
+    const [isHovering, setIsHovering] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
 
     useEffect(() => {
-        const moveCursor = (e) => {
-            cursorX.set(e.clientX - 16); // Center the 32px cursor
-            cursorY.set(e.clientY - 16);
+        setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+        
+        const updateMousePosition = (e) => {
+            setMousePos({ x: e.clientX, y: e.clientY });
+        };
+        
+        const handleMouseOver = (e) => {
+            const target = e.target;
+            if (target.closest('a') || target.closest('button') || target.closest('input') || target.closest('textarea') || target.closest('[role="button"]') || target.closest('.glass-hover')) {
+                setIsHovering(true);
+            } else {
+                setIsHovering(false);
+            }
         };
 
-        const handleMouseEnter = () => setIsHovered(true);
-        const handleMouseLeave = () => setIsHovered(false);
-
-        // Track mouse movement
-        window.addEventListener('mousemove', moveCursor);
-
-        // Add hover listeners to clickable elements
-        const clickableElements = document.querySelectorAll('a, button, input, textarea, [role="button"]');
-        clickableElements.forEach(el => {
-            el.addEventListener('mouseenter', handleMouseEnter);
-            el.addEventListener('mouseleave', handleMouseLeave);
-        });
-
-        // Observer to handle dynamic content (like modals or new elements)
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.addedNodes.length) {
-                    const newClickables = document.querySelectorAll('a, button, input, textarea, [role="button"]');
-                    newClickables.forEach(el => {
-                        // Remove first to avoid duplicates (though listeners are unique by ref, safety first)
-                        el.removeEventListener('mouseenter', handleMouseEnter);
-                        el.removeEventListener('mouseleave', handleMouseLeave);
-                        el.addEventListener('mouseenter', handleMouseEnter);
-                        el.addEventListener('mouseleave', handleMouseLeave);
-                    });
-                }
-            });
-        });
-
-        observer.observe(document.body, { childList: true, subtree: true });
-
+        window.addEventListener('mousemove', updateMousePosition);
+        window.addEventListener('mouseover', handleMouseOver);
+        
         return () => {
-            window.removeEventListener('mousemove', moveCursor);
-            clickableElements.forEach(el => {
-                el.removeEventListener('mouseenter', handleMouseEnter);
-                el.removeEventListener('mouseleave', handleMouseLeave);
-            });
-            observer.disconnect();
+            window.removeEventListener('mousemove', updateMousePosition);
+            window.removeEventListener('mouseover', handleMouseOver);
         };
-    }, [cursorX, cursorY]);
+    }, []);
+
+    // Smooth spring configuration for the flashlight (slow trailing)
+    const flashlightX = useSpring(-100, { damping: 40, stiffness: 150, mass: 1 });
+    const flashlightY = useSpring(-100, { damping: 40, stiffness: 150, mass: 1 });
+    
+    // Snappy spring for the ring
+    const ringX = useSpring(-100, { damping: 25, stiffness: 400, mass: 0.5 });
+    const ringY = useSpring(-100, { damping: 25, stiffness: 400, mass: 0.5 });
+
+    useEffect(() => {
+        flashlightX.set(mousePos.x);
+        flashlightY.set(mousePos.y);
+        ringX.set(mousePos.x);
+        ringY.set(mousePos.y);
+    }, [mousePos, flashlightX, flashlightY, ringX, ringY]);
+
+    if (isTouchDevice) return null;
 
     return (
-        <>
-            {/* Main Dot */}
+        <div className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden">
+            {/* Massive Ambient Flashlight Aura */}
             <motion.div
-                className="fixed top-0 left-0 w-4 h-4 rounded-full bg-primary mix-blend-difference pointer-events-none z-[9999]"
+                className="fixed top-0 left-0 w-[600px] h-[600px] rounded-full mix-blend-screen opacity-20 dark:opacity-40"
                 style={{
-                    x: cursorXSpring,
-                    y: cursorYSpring,
-                    translateX: 8, // Offset to center inner dot
-                    translateY: 8,
+                    x: flashlightX,
+                    y: flashlightY,
+                    translateX: '-50%',
+                    translateY: '-50%',
+                    background: 'radial-gradient(circle, rgba(14,165,233,0.4) 0%, rgba(34,197,94,0.1) 40%, rgba(0,0,0,0) 70%)'
                 }}
             />
-            {/* Outline Ring */}
+
+            {/* Inner Dot */}
             <motion.div
-                className="fixed top-0 left-0 w-8 h-8 rounded-full border border-primary mix-blend-difference pointer-events-none z-[9999]"
+                className="fixed top-0 left-0 w-3 h-3 bg-[#38bdf8] rounded-full shadow-[0_0_20px_rgba(56,189,248,1)] mix-blend-screen"
                 style={{
-                    x: cursorXSpring,
-                    y: cursorYSpring,
+                    x: mousePos.x,
+                    y: mousePos.y,
+                    translateX: '-50%',
+                    translateY: '-50%',
                 }}
                 animate={{
-                    scale: isHovered ? 2.5 : 1,
-                    opacity: isHovered ? 0.5 : 1,
-                    backgroundColor: isHovered ? 'rgba(0, 243, 255, 0.1)' : 'transparent',
+                    scale: isHovering ? 0 : 1,
+                    opacity: isHovering ? 0 : 1
                 }}
-                transition={{ duration: 0.2 }}
+                transition={{ type: 'tween', ease: 'backOut', duration: 0.15 }}
             />
-        </>
+            
+            {/* Outer Ring & Glow Trail */}
+            <motion.div
+                className="fixed top-0 left-0 w-12 h-12 border-2 border-[#06b6d4] rounded-full mix-blend-screen flex items-center justify-center"
+                style={{
+                    x: ringX,
+                    y: ringY,
+                    translateX: '-50%',
+                    translateY: '-50%',
+                    boxShadow: '0 0 15px rgba(6,182,212,0.6), inset 0 0 10px rgba(6,182,212,0.4)'
+                }}
+                animate={{
+                    scale: isHovering ? 1.8 : 1,
+                    backgroundColor: isHovering ? 'rgba(6,182,212,0.15)' : 'rgba(0,0,0,0)',
+                    borderColor: isHovering ? '#22c55e' : '#06b6d4',
+                    boxShadow: isHovering ? '0 0 30px rgba(34,197,94,0.6), inset 0 0 20px rgba(34,197,94,0.3)' : '0 0 15px rgba(6,182,212,0.6), inset 0 0 10px rgba(6,182,212,0.4)'
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            >
+                {/* Center pulse when hovering */}
+                <motion.div 
+                    className="w-full h-full bg-white/20 rounded-full"
+                    animate={{ scale: isHovering ? [1, 0.8, 1] : 0, opacity: isHovering ? [0.5, 0, 0.5] : 0 }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                />
+            </motion.div>
+        </div>
     );
 };
 
