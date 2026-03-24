@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Home, User, Code2, Briefcase, Mail, FolderGit2, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { playClick, playHover } from '../utils/sounds';
@@ -9,11 +9,19 @@ const Navbar = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { theme, toggleTheme } = useTheme();
+    const rafRef = useRef(null);
+    const rafRef2 = useRef(null);
 
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 40);
-        window.addEventListener('scroll', onScroll);
-        return () => window.removeEventListener('scroll', onScroll);
+        const onScroll = () => {
+            if (rafRef.current) return;
+            rafRef.current = requestAnimationFrame(() => {
+                setScrolled(window.scrollY > 40);
+                rafRef.current = null;
+            });
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(rafRef.current); };
     }, []);
 
     const navLinks = [
@@ -27,18 +35,22 @@ const Navbar = () => {
 
     useEffect(() => {
         const handleScroll = () => {
-            const sections = navLinks.map(l => document.querySelector(l.href));
-            const pos = window.scrollY + 220;
-            let current = 'home';
-            sections.forEach((sec, i) => {
-                if (sec && sec.offsetTop <= pos && sec.offsetTop + sec.offsetHeight > pos) {
-                    current = navLinks[i].id;
-                }
+            if (rafRef2.current) return;
+            rafRef2.current = requestAnimationFrame(() => {
+                const sections = navLinks.map(l => document.querySelector(l.href));
+                const pos = window.scrollY + 220;
+                let current = 'home';
+                sections.forEach((sec, i) => {
+                    if (sec && sec.offsetTop <= pos && sec.offsetTop + sec.offsetHeight > pos) {
+                        current = navLinks[i].id;
+                    }
+                });
+                setActiveTab(current);
+                rafRef2.current = null;
             });
-            setActiveTab(current);
         };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => { window.removeEventListener('scroll', handleScroll); cancelAnimationFrame(rafRef2.current); };
     }, []);
 
     const ThemeToggleButton = ({ isMobile }) => (

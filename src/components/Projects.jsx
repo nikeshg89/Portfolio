@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useMotionValue, useMotionTemplate } from 'framer-motion';
-import { Eye, ExternalLink, Github, Code2, Link, Play, BarChart, BrainCircuit, LayoutDashboard } from 'lucide-react';
+import { Eye, ExternalLink, Github, Code2, Link, Play, BarChart, BrainCircuit, LayoutDashboard, X } from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
 import { useTheme } from '../context/ThemeContext';
 import CyberCard from './CyberCard';
+
+// Module-level — never re-created, no Math.random in render
+const PROJECTS_PARTICLES = Array.from({ length: 10 }, () => ({
+    top: `${Math.random() * 100}%`,
+    left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3,
+    delay: Math.random() * 3,
+}));
 
 const filters = [
     { label: 'All', icon: null },
@@ -128,16 +136,18 @@ const Projects = () => {
         <section id="projects" className="relative py-32 overflow-hidden bg-slate-50 dark:bg-[#020617] transition-colors duration-500">
             {/* Background effects */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(56,189,248,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_60%,transparent_100%)] transition-colors duration-500" />
-                <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#0ea5e9]/10 rounded-full blur-[150px] mix-blend-screen" />
-                <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#22c55e]/10 rounded-full blur-[150px] mix-blend-screen" />
-                {[...Array(20)].map((_, i) => (
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(56,189,248,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.025)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_60%,transparent_100%)] transition-colors duration-500" />
+                {/* Static ambient glows */}
+                <div className="absolute top-1/4 left-1/4 w-[450px] h-[450px] bg-[#0ea5e9]/8 rounded-full blur-[100px] mix-blend-screen" />
+                <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-[#22c55e]/8 rounded-full blur-[100px] mix-blend-screen" />
+                {/* Module-level particles — no Math.random in render */}
+                {PROJECTS_PARTICLES.map((p, i) => (
                     <motion.div
                         key={i}
-                        className="absolute w-1 h-1 bg-[#38bdf8]/50 dark:bg-white/50 rounded-full transition-colors duration-500"
-                        style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, filter: 'blur(1px)' }}
-                        animate={{ opacity: [0.1, 0.8, 0.1], y: [0, -30, 0], scale: [1, 2, 1] }}
-                        transition={{ duration: Math.random() * 4 + 2, repeat: Infinity, delay: Math.random() * 2 }}
+                        className="absolute w-1 h-1 bg-[#38bdf8]/40 dark:bg-white/40 rounded-full"
+                        style={{ top: p.top, left: p.left, willChange: 'opacity, transform' }}
+                        animate={{ opacity: [0.1, 0.7, 0.1], y: [0, -25, 0] }}
+                        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
                     />
                 ))}
             </div>

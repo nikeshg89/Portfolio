@@ -11,6 +11,24 @@ import { portfolioData } from '../data/portfolioData';
 import { useTheme } from '../context/ThemeContext';
 import CyberCard from './CyberCard';
 
+// Module-level particle arrays — computed once, never re-created on render
+const TRAINING_PARTICLES = Array.from({ length: 12 }, () => ({
+    top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3, delay: Math.random() * 3,
+}));
+const EXTRA_PARTICLES = Array.from({ length: 10 }, () => ({
+    top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3, delay: Math.random() * 3,
+}));
+const EDU_PARTICLES = Array.from({ length: 10 }, () => ({
+    top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3, delay: Math.random() * 3,
+}));
+const CERT_PARTICLES = Array.from({ length: 12 }, () => ({
+    top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
+    duration: Math.random() * 4 + 3, delay: Math.random() * 3,
+}));
+
 const ICON_MAP = { Code2, BrainCircuit, BarChart };
 
 /* ─────────────── Premium Standalone Training Card ─────────────── */
@@ -135,10 +153,12 @@ const CertSection = () => {
                 {/* Extreme Futuristic Background */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(56,189,248,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_65%,transparent_100%)] transition-colors duration-500" />
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 150, repeat: Infinity, ease: 'linear' }} className="absolute top-[10%] left-[10%] w-96 h-96 bg-[#0ea5e9]/10 rounded-full blur-[140px] mix-blend-screen" />
-                    <motion.div animate={{ rotate: -360 }} transition={{ duration: 150, repeat: Infinity, ease: 'linear' }} className="absolute bottom-[10%] right-[10%] w-96 h-96 bg-[#22c55e]/10 rounded-full blur-[140px] mix-blend-screen" />
-                    {[...Array(25)].map((_, i) => (
-                        <motion.div key={i} className="absolute w-1 h-1 bg-[#38bdf8]/50 dark:bg-white/40 rounded-full shadow-[0_0_10px_#38bdf8]" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} animate={{ opacity: [0, 1, 0], scale: [0, 2, 0], y: [0, -40, 0] }} transition={{ duration: Math.random() * 4 + 3, repeat: Infinity, ease: 'easeInOut', delay: Math.random() * 3 }} />
+                    {/* Static ambient glows — removed spinning rotate animations */}
+                    <div className="absolute top-[10%] left-[10%] w-80 h-80 bg-[#0ea5e9]/8 rounded-full blur-[100px] mix-blend-screen" />
+                    <div className="absolute bottom-[10%] right-[10%] w-80 h-80 bg-[#22c55e]/8 rounded-full blur-[100px] mix-blend-screen" />
+                    {/* Module-level particles */}
+                    {CERT_PARTICLES.map((p, i) => (
+                        <motion.div key={i} className="absolute w-1 h-1 bg-[#38bdf8]/40 dark:bg-white/35 rounded-full" style={{ top: p.top, left: p.left, willChange: 'opacity, transform' }} animate={{ opacity: [0, 0.8, 0], y: [0, -35, 0] }} transition={{ duration: p.duration, repeat: Infinity, ease: 'easeInOut', delay: p.delay }} />
                     ))}
                 </div>
 
@@ -396,14 +416,14 @@ const Experience = () => {
                 {/* Background */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(56,189,248,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_50%,transparent_100%)] transition-colors duration-500" />
-                    <motion.div style={{ y: yParallax }} className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#06b6d4]/10 rounded-full blur-[150px]" />
-                    <motion.div style={{ y: useTransform(scrollYProgress, [0, 1], [-40, 40]) }} className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#38bdf8]/10 rounded-full blur-[130px]" />
-                    {[...Array(22)].map((_, i) => (
+                    <motion.div style={{ y: yParallax }} className="absolute top-1/4 left-1/4 w-[450px] h-[450px] bg-[#06b6d4]/8 rounded-full blur-[100px]" />
+                    <motion.div style={{ y: useTransform(scrollYProgress, [0, 1], [-40, 40]) }} className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] bg-[#38bdf8]/8 rounded-full blur-[90px]" />
+                    {TRAINING_PARTICLES.map((p, i) => (
                         <motion.div key={i}
-                            className="absolute w-0.5 h-0.5 bg-slate-500 dark:bg-white/30 rounded-full transition-colors duration-500"
-                            style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }}
-                            animate={{ opacity: [0.1, 0.9, 0.1], scale: [1, 2, 1] }}
-                            transition={{ duration: Math.random() * 4 + 2, repeat: Infinity, delay: Math.random() * 3 }}
+                            className="absolute w-0.5 h-0.5 bg-slate-500 dark:bg-white/30 rounded-full"
+                            style={{ top: p.top, left: p.left, willChange: 'opacity' }}
+                            animate={{ opacity: [0.1, 0.8, 0.1] }}
+                            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}
                         />
                     ))}
                 </div>
@@ -438,14 +458,14 @@ const Experience = () => {
                 {/* Background */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(34,211,238,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.02)_1px,transparent_1px)] bg-[size:45px_45px] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_55%,transparent_100%)] transition-colors duration-500" />
-                    <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-[#06b6d4]/10 rounded-full blur-[130px]" />
-                    <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-[#22d3ee]/10 rounded-full blur-[130px]" />
-                    {[...Array(20)].map((_, i) => (
+                    <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-[#06b6d4]/8 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-[#22d3ee]/8 rounded-full blur-[100px]" />
+                    {EXTRA_PARTICLES.map((p, i) => (
                         <motion.div key={i}
-                            className="absolute w-0.5 h-0.5 bg-slate-400 dark:bg-white/25 rounded-full transition-colors duration-500"
-                            style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }}
-                            animate={{ opacity: [0.1, 0.8, 0.1], scale: [1, 2, 1] }}
-                            transition={{ duration: Math.random() * 4 + 2, repeat: Infinity, delay: Math.random() * 3 }}
+                            className="absolute w-0.5 h-0.5 bg-slate-400 dark:bg-white/25 rounded-full"
+                            style={{ top: p.top, left: p.left, willChange: 'opacity' }}
+                            animate={{ opacity: [0.1, 0.7, 0.1] }}
+                            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}
                         />
                     ))}
                 </div>
@@ -540,14 +560,14 @@ const Experience = () => {
                 {/* Background */}
                 <div className="absolute inset-0 z-0 pointer-events-none">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(56,189,248,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.02)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:radial-gradient(ellipse_65%_65%_at_50%_50%,#000_50%,transparent_100%)] transition-colors duration-500" />
-                    <div className="absolute top-1/4 left-1/3 w-[450px] h-[450px] bg-[#06b6d4]/10 rounded-full blur-[140px]" />
-                    <div className="absolute bottom-1/4 right-1/3 w-[450px] h-[450px] bg-[#22c55e]/10 rounded-full blur-[140px]" />
-                    {[...Array(20)].map((_, i) => (
+                    <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-[#06b6d4]/8 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-[#22c55e]/8 rounded-full blur-[100px]" />
+                    {EDU_PARTICLES.map((p, i) => (
                         <motion.div key={i}
-                            className="absolute w-0.5 h-0.5 bg-slate-400 dark:bg-white/25 rounded-full transition-colors duration-500"
-                            style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }}
-                            animate={{ opacity: [0.1, 0.8, 0.1], scale: [1, 2, 1] }}
-                            transition={{ duration: Math.random() * 4 + 2, repeat: Infinity, delay: Math.random() * 3 }}
+                            className="absolute w-0.5 h-0.5 bg-slate-400 dark:bg-white/25 rounded-full"
+                            style={{ top: p.top, left: p.left, willChange: 'opacity' }}
+                            animate={{ opacity: [0.1, 0.7, 0.1] }}
+                            transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}
                         />
                     ))}
                 </div>

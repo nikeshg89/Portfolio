@@ -57,8 +57,8 @@ const AnimatedCounter = ({ value, duration = 2.5 }) => {
     return <span>{display}{hasPlus ? '+' : ''}</span>;
 };
 
-/* ── Floating particles ── */
-const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
+/* ── Floating particles — created once at module level ── */
+const PARTICLES = Array.from({ length: 15 }, (_, i) => ({
     id: i,
     top: `${Math.random() * 100}%`,
     left: `${Math.random() * 100}%`,
@@ -70,8 +70,8 @@ const PARTICLES = Array.from({ length: 30 }, (_, i) => ({
 
 const Hero = () => {
     const { personal } = portfolioData;
-    const [isMobile, setIsMobile] = useState(true);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const isMobileRef = useRef(typeof window !== 'undefined' && window.innerWidth < 1024);
+    const glowRef = useRef(null);
     const sectionRef = useRef(null);
     const { theme } = useTheme();
 
@@ -83,22 +83,26 @@ const Hero = () => {
     ]);
 
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 1024);
-        check();
-        window.addEventListener('resize', check);
+        const check = () => { isMobileRef.current = window.innerWidth < 1024; };
+        window.addEventListener('resize', check, { passive: true });
         return () => window.removeEventListener('resize', check);
     }, []);
 
-    // Pointer glow effect
+    // Pointer glow — CSS transforms directly on DOM node, zero re-renders
     useEffect(() => {
-        const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-        window.addEventListener('mousemove', onMove);
+        const onMove = (e) => {
+            if (glowRef.current) {
+                glowRef.current.style.left = `${e.clientX - 192}px`;
+                glowRef.current.style.top = `${e.clientY - 192}px`;
+            }
+        };
+        window.addEventListener('mousemove', onMove, { passive: true });
         return () => window.removeEventListener('mousemove', onMove);
     }, []);
 
     const { scrollY } = useScroll();
     const y1Base = useTransform(scrollY, [0, 500], [0, 150]);
-    const y1 = isMobile ? 0 : y1Base;
+    const y1 = isMobileRef.current ? 0 : y1Base;
 
     return (
         <section id="home" ref={sectionRef} className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden bg-slate-50 dark:bg-[#020617] transition-colors duration-500">
@@ -120,22 +124,24 @@ const Hero = () => {
                 {PARTICLES.map(p => (
                     <motion.div
                         key={p.id}
-                        className={`absolute rounded-full ${p.color} shadow-lg`}
-                        style={{ top: p.top, left: p.left, width: p.size * 2, height: p.size * 2, filter: 'blur(1px)' }}
+                        className={`absolute rounded-full ${p.color}`}
+                        style={{ top: p.top, left: p.left, width: p.size * 2, height: p.size * 2, filter: 'blur(1px)', willChange: 'transform, opacity' }}
                         animate={{ opacity: [0, 0.8, 0], y: [0, -40, 0], scale: [0.8, 1.5, 0.8] }}
                         transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
                     />
                 ))}
             </div>
 
-            {/* Pointer interactive glow */}
-            <motion.div
+            {/* Pointer interactive glow — updated via ref, no re-renders */}
+            <div
+                ref={glowRef}
                 className="fixed z-0 w-96 h-96 pointer-events-none rounded-full mix-blend-screen"
                 style={{
                     background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 60%)',
-                    top: mousePos.y - 192,
-                    left: mousePos.x - 192,
-                    transition: 'top 0.1s ease-out, left 0.1s ease-out',
+                    top: -192,
+                    left: -192,
+                    transition: 'top 0.08s ease-out, left 0.08s ease-out',
+                    willChange: 'top, left',
                 }}
             />
 

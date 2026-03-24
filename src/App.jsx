@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomCursor from './components/CustomCursor';
 import ScrollProgress from './components/ScrollProgress';
@@ -8,10 +8,18 @@ import Hero from './components/Hero';
 import About from './components/About';
 import Skills from './components/Skills';
 import Projects from './components/Projects';
-import Experience from './components/Experience';
-import Contact from './components/Contact';
 import Footer from './components/Footer';
 import CommandPalette from './components/CommandPalette';
+
+// Lazy-load heavy sections — reduces initial JS parse time
+const Experience = lazy(() => import('./components/Experience'));
+const Contact = lazy(() => import('./components/Contact'));
+
+const SectionFallback = () => (
+    <div className="flex items-center justify-center py-24 text-[#0ea5e9]/40 text-sm tracking-widest uppercase">
+        Loading...
+    </div>
+);
 
 const Loader = () => {
     const [progress, setProgress] = useState(0);
@@ -38,13 +46,13 @@ const Loader = () => {
                         animate={{ rotate: 360 }}
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         className="w-24 h-24 rounded-full border-t-2 border-r-2 border-[#0ea5e9] opacity-80"
-                        style={{ filter: 'drop-shadow(0 0 10px rgba(14,165,233,0.8))' }}
+                        style={{ filter: 'drop-shadow(0 0 10px rgba(14,165,233,0.8))', willChange: 'transform' }}
                     />
                     <motion.div
                         animate={{ rotate: -360 }}
                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                         className="w-20 h-20 rounded-full border-b-2 border-l-2 border-[#22c55e] absolute top-2 left-2 opacity-80"
-                        style={{ filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.8))' }}
+                        style={{ filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.8))', willChange: 'transform' }}
                     />
                     <div className="absolute inset-0 flex items-center justify-center font-black font-orbitron text-transparent bg-clip-text bg-gradient-to-br from-[#0ea5e9] to-[#22c55e]">
                         {Math.floor(progress)}%
@@ -65,12 +73,12 @@ const Loader = () => {
                     Initializing Environment
                 </div>
 
-                {/* Cyberpunk Progress Bar */}
                 <div className="w-64 h-1.5 bg-white/10 rounded-full mt-6 overflow-hidden relative shadow-[0_0_20px_rgba(14,165,233,0.3)]">
-                    <motion.div 
-                        initial={{ width: '0%' }} 
-                        animate={{ width: `${progress}%` }} 
+                    <motion.div
+                        initial={{ width: '0%' }}
+                        animate={{ width: `${progress}%` }}
                         className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#0ea5e9] to-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.8)]"
+                        style={{ willChange: 'width' }}
                     />
                 </div>
             </div>
@@ -82,7 +90,6 @@ function App() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Simulate initial load
         const timer = setTimeout(() => setLoading(false), 2000);
         return () => clearTimeout(timer);
     }, []);
@@ -108,9 +115,13 @@ function App() {
                     <About />
                     <Skills />
                     <Projects />
-                    {/* Experience includes Training, Certifications, Extracurricular, Education */}
-                    <Experience />
-                    <Contact />
+                    {/* Lazy-loaded heavy sections */}
+                    <Suspense fallback={<SectionFallback />}>
+                        <Experience />
+                    </Suspense>
+                    <Suspense fallback={<SectionFallback />}>
+                        <Contact />
+                    </Suspense>
                 </main>
 
                 <Footer />
