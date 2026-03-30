@@ -9,7 +9,7 @@ export const portfolioData = {
         phone: "+91 7004704385",
         github: "https://github.com/nikeshg89",
         linkedin: "https://www.linkedin.com/in/menikesh08/",
-        resume: "/nikeshconfirmcv13.pdf", // Link to the provided CV in root directory
+        resume: "/Nikeshconfirmcv13.pdf", // Link to the provided CV in root directory
         stats: {
             cgpa: "7.67",
             projects: "3+",
