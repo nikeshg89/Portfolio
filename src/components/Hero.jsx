@@ -237,7 +237,7 @@ const Hero = () => {
                             >
                                 <div className="absolute inset-0 bg-black/5 dark:bg-white/5 group-hover:bg-[#22c55e]/20 transition-colors duration-300" />
                                 <span className="relative z-10 flex items-center gap-2 text-slate-800 dark:text-gray-100 group-hover:text-[#22c55e] dark:group-hover:text-[#22c55e] transition-colors drop-shadow-sm">
-                                    <Download size={18} /> Download CV
+                                    <Download size={18} /> View CV
                                 </span>
                             </MagneticButton>
                         </div>
